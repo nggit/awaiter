@@ -4,17 +4,17 @@ __version__ = '0.0.0'
 __all__ = ('ThreadExecutor',)
 
 import asyncio  # noqa: E402
-import queue  # noqa: E402
-import threading  # noqa: E402
 
 from functools import wraps  # noqa: E402
+from queue import SimpleQueue  # noqa: E402
+from threading import Thread  # noqa: E402
 
 
-class ThreadExecutor(threading.Thread):
+class ThreadExecutor(Thread):
     def __init__(self, loop=None, **kwargs):
         super().__init__(**kwargs)
 
-        self.queue = queue.SimpleQueue()
+        self.queue = SimpleQueue()
         self._loop = loop
 
     async def __aenter__(self):

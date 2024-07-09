@@ -52,6 +52,8 @@ class TestThreadExecutor(unittest.TestCase):
             fut2 = self.executor.submit(blocking_function)
 
             time_start = self.loop.time()
+
+            await asyncio.sleep(2)
             _ = await fut1
             _ = await fut2
 
