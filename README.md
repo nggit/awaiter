@@ -38,7 +38,7 @@ from asyncutor import ThreadExecutor
 executor = ThreadExecutor()
 
 
-@executor.coroutine
+@executor
 def blocking_function(name):
     time.sleep(1)
     return f'Hello, {name}!'
@@ -54,6 +54,13 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
+```
+
+If you want to execute multiple tasks at once without waiting in the main thread, use `executor.submit()`:
+```python
+    fut1 = executor.submit(blocking_function, 'World')
+    fut2 = executor.submit(blocking_function, 'Foo')
+    fut3 = executor.submit(blocking_function, 'Bar')
 ```
 
 ## Install

@@ -31,7 +31,7 @@ class TestThreadExecutor(unittest.TestCase):
         self.loop.run_until_complete(test())
 
     def test_exception(self):
-        @self.executor.coroutine
+        @self.executor
         def blocking_function():
             sys.exit(1)
 
@@ -44,27 +44,29 @@ class TestThreadExecutor(unittest.TestCase):
         self.loop.run_until_complete(test())
 
     def test_multiple_tasks(self):
-        def blocking_function():
+        def blocking_function(name):
             time.sleep(1)
+            return f'Hello, {name}!'
 
         async def test():
-            fut1 = self.executor.submit(blocking_function)
-            fut2 = self.executor.submit(blocking_function)
+            # submit to the thread without waiting
+            fut1 = self.executor.submit(blocking_function, 'Foo')
+            fut2 = self.executor.submit(blocking_function, 'Bar')
 
-            time_start = self.loop.time()
+            await asyncio.sleep(3)
+            # after 3 seconds there should be a result without these:
+            # await fut1
+            # await fut2
 
-            await asyncio.sleep(2)
-            _ = await fut1
-            _ = await fut2
-
-            self.assertEqual(int(self.loop.time() - time_start), 2)
+            self.assertEqual(fut1.result(), 'Hello, Foo!')
+            self.assertEqual(fut2.result(), 'Hello, Bar!')
 
         self.loop.run_until_complete(test())
 
     def test_context_manager(self):
         executor = ThreadExecutor()
 
-        @executor.coroutine
+        @executor
         def blocking_function():
             return None
 

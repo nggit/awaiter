@@ -1,6 +1,6 @@
 # Copyright (c) 2024 nggit
 
-__version__ = '0.0.0'
+__version__ = '0.0.1'
 __all__ = ('ThreadExecutor',)
 
 import asyncio  # noqa: E402
@@ -8,6 +8,16 @@ import asyncio  # noqa: E402
 from functools import wraps  # noqa: E402
 from queue import SimpleQueue  # noqa: E402
 from threading import Thread  # noqa: E402
+
+
+def set_result(fut, result):
+    if not fut.done():
+        fut.set_result(result)
+
+
+def set_exception(fut, exc):
+    if not fut.done():
+        fut.set_exception(exc)
 
 
 class ThreadExecutor(Thread):
@@ -24,9 +34,6 @@ class ThreadExecutor(Thread):
         self.shutdown()
 
     def __call__(self, func):
-        return self.coroutine(func)
-
-    def coroutine(self, func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             return self.submit(func, *args, **kwargs)
@@ -50,9 +57,9 @@ class ThreadExecutor(Thread):
             try:
                 result = func(*args, **kwargs)
 
-                self._loop.call_soon_threadsafe(fut.set_result, result)
+                self._loop.call_soon_threadsafe(set_result, fut, result)
             except BaseException as exc:
-                self._loop.call_soon_threadsafe(fut.set_exception, exc)
+                self._loop.call_soon_threadsafe(set_exception, fut, exc)
 
     def submit(self, func, *args, **kwargs):
         if self._loop is None:
