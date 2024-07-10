@@ -67,13 +67,43 @@ class TestThreadExecutor(unittest.TestCase):
         executor = ThreadExecutor()
 
         @executor
-        def blocking_function():
-            return None
+        def blocking_function(name):
+            return f'Hello, {name}!'
 
         async def test():
             async with executor:
-                result = await blocking_function()
-                self.assertEqual(result, None)
+                result = await blocking_function('World')
+                self.assertEqual(result, 'Hello, World!')
+
+        self.loop.run_until_complete(test())
+
+    def test_generator_function(self):
+        @self.executor
+        def generator_function(name):
+            yield b'Hello, '
+            yield name
+            yield b'!'
+
+        async def test():
+            result = bytearray()
+
+            async for data in generator_function(b'World'):
+                result.extend(data)
+
+            self.assertEqual(result, b'Hello, World!')
+
+        self.loop.run_until_complete(test())
+
+    def test_cancel_future(self):
+        def blocking_function():
+            return
+
+        async def test():
+            fut = self.executor.submit(blocking_function)
+            fut.cancel()
+
+            await asyncio.sleep(1)
+            self.assertTrue(fut.done())
 
         self.loop.run_until_complete(test())
 

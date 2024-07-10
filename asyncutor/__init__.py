@@ -1,11 +1,12 @@
 # Copyright (c) 2024 nggit
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 __all__ = ('ThreadExecutor',)
 
 import asyncio  # noqa: E402
 
 from functools import wraps  # noqa: E402
+from inspect import isgeneratorfunction  # noqa: E402
 from queue import SimpleQueue  # noqa: E402
 from threading import Thread  # noqa: E402
 
@@ -59,11 +60,33 @@ class ThreadExecutor(Thread):
 
                 self._loop.call_soon_threadsafe(set_result, fut, result)
             except BaseException as exc:
-                self._loop.call_soon_threadsafe(set_exception, fut, exc)
+                if (func.__name__ == '__next__' and
+                        isinstance(exc, StopIteration)):
+                    # StopIteration interacts badly with generators
+                    # and cannot be raised into a Future
+                    self._loop.call_soon_threadsafe(fut.cancel)
+                else:
+                    self._loop.call_soon_threadsafe(set_exception, fut, exc)
 
     def submit(self, func, *args, **kwargs):
         if self._loop is None:
             raise RuntimeError('calling submit() before start()')
+
+        if isgeneratorfunction(func):
+            gen = func(*args, **kwargs)
+
+            @wraps(func)
+            async def wrapper():
+                while True:
+                    fut = self._loop.create_future()
+                    self.queue.put_nowait((fut, gen.__next__, (), {}))
+
+                    try:
+                        yield await fut
+                    except asyncio.CancelledError:
+                        break
+
+            return wrapper()
 
         fut = self._loop.create_future()
         self.queue.put_nowait((fut, func, args, kwargs))

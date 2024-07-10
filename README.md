@@ -28,7 +28,6 @@ if __name__ == '__main__':
 ```
 
 Or use the decorator style:
-
 ```python
 import asyncio
 import time
@@ -58,9 +57,31 @@ if __name__ == '__main__':
 
 If you want to execute multiple tasks at once without waiting in the main thread, use `executor.submit()`:
 ```python
+# ...
+
     fut1 = executor.submit(blocking_function, 'World')
     fut2 = executor.submit(blocking_function, 'Foo')
     fut3 = executor.submit(blocking_function, 'Bar')
+
+# ...
+```
+
+Last but not least, it also supports generator functions:
+```python
+# ...
+
+@executor
+def generator_function(name):
+    yield 'Hello, '
+    yield name
+    yield '!'
+
+# ...
+
+    async for data in generator_function('World'):
+        print(data)
+
+# ...
 ```
 
 ## Install
