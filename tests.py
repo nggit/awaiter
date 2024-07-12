@@ -115,16 +115,6 @@ class TestThreadExecutor(unittest.TestCase):
 
         self.assertEqual(str(cm.exception), 'calling submit() before start()')
 
-    def test_shutdown_before_start(self):
-        executor = ThreadExecutor()
-
-        with self.assertRaises(RuntimeError) as cm:
-            executor.shutdown()
-
-        self.assertEqual(
-            str(cm.exception), 'calling shutdown() before start()'
-        )
-
     def test_shutdown(self):
         self.executor.shutdown()
         self.assertFalse(self.executor.is_alive())

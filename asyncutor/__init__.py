@@ -94,10 +94,8 @@ class ThreadExecutor(Thread):
         return fut
 
     def shutdown(self, wait=True):
-        if self._loop is None:
-            raise RuntimeError('calling shutdown() before start()')
+        if self.is_alive():
+            self.queue.put_nowait((None, None, None, None))
 
-        self.queue.put_nowait((None, None, None, None))
-
-        if wait:
-            self.join()
+            if wait:
+                self.join()
