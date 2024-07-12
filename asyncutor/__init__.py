@@ -1,12 +1,12 @@
 # Copyright (c) 2024 nggit
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 __all__ = ('ThreadExecutor',)
 
 import asyncio  # noqa: E402
 
 from functools import wraps  # noqa: E402
-from inspect import isgeneratorfunction  # noqa: E402
+from inspect import isgenerator, isgeneratorfunction  # noqa: E402
 from queue import SimpleQueue  # noqa: E402
 from threading import Thread  # noqa: E402
 
@@ -60,8 +60,8 @@ class ThreadExecutor(Thread):
 
                 self._loop.call_soon_threadsafe(set_result, fut, result)
             except BaseException as exc:
-                if (func.__name__ == '__next__' and
-                        isinstance(exc, StopIteration)):
+                if (isinstance(exc, StopIteration) and
+                        isgenerator(getattr(func, '__self__'))):
                     # StopIteration interacts badly with generators
                     # and cannot be raised into a Future
                     self._loop.call_soon_threadsafe(fut.cancel)

@@ -73,6 +73,7 @@ Last but not least, it also supports generator functions:
 @executor
 def generator_function(name):
     yield 'Hello, '
+    time.sleep(1)
     yield name
     yield '!'
 
