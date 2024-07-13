@@ -1,6 +1,6 @@
 # Copyright (c) 2024 nggit
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 __all__ = ('ThreadExecutor',)
 
 import asyncio  # noqa: E402
@@ -27,12 +27,13 @@ class ThreadExecutor(Thread):
 
         self.queue = SimpleQueue()
         self._loop = loop
+        self._shutdown = None
 
     async def __aenter__(self):
         return self.start()
 
     async def __aexit__(self, exc_type, exc, tb):
-        self.shutdown()
+        await self.shutdown()
 
     def __call__(self, func):
         @wraps(func)
@@ -45,7 +46,12 @@ class ThreadExecutor(Thread):
         if self._loop is None:
             self._loop = asyncio.get_running_loop()
 
-        super().start()
+        if self._shutdown is None:
+            self._shutdown = self._loop.create_future()
+
+        if not self._shutdown.done():
+            super().start()
+
         return self
 
     def run(self):
@@ -68,9 +74,13 @@ class ThreadExecutor(Thread):
                 else:
                     self._loop.call_soon_threadsafe(set_exception, fut, exc)
 
+        self._loop.call_soon_threadsafe(set_result, self._shutdown, None)
+
     def submit(self, func, *args, **kwargs):
-        if self._loop is None:
-            raise RuntimeError('calling submit() before start()')
+        if not self.is_alive() or self._shutdown.done():
+            raise RuntimeError(
+                'calling submit() before start() or after shutdown()'
+            )
 
         if isgeneratorfunction(func):
             gen = func(*args, **kwargs)
@@ -93,9 +103,10 @@ class ThreadExecutor(Thread):
 
         return fut
 
-    def shutdown(self, wait=True):
+    def shutdown(self):
         if self.is_alive():
             self.queue.put_nowait((None, None, None, None))
+        else:
+            set_result(self._shutdown, None)
 
-            if wait:
-                self.join()
+        return self._shutdown

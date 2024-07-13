@@ -17,7 +17,7 @@ class TestThreadExecutor(unittest.TestCase):
         self.executor.start()
 
     def tearDown(self):
-        self.executor.shutdown()
+        self.loop.run_until_complete(self.executor.shutdown())
         self.loop.close()
 
     def test_result(self):
@@ -113,10 +113,27 @@ class TestThreadExecutor(unittest.TestCase):
         with self.assertRaises(RuntimeError) as cm:
             executor.submit(None)
 
-        self.assertEqual(str(cm.exception), 'calling submit() before start()')
+        self.assertEqual(
+            str(cm.exception),
+            'calling submit() before start() or after shutdown()'
+        )
+
+    def test_submit_after_shutdown(self):
+        self.loop.run_until_complete(self.executor.shutdown())
+
+        with self.assertRaises(RuntimeError) as cm:
+            self.executor.submit(None)
+
+        self.assertEqual(
+            str(cm.exception),
+            'calling submit() before start() or after shutdown()'
+        )
 
     def test_shutdown(self):
-        self.executor.shutdown()
+        fut = self.executor.shutdown()
+        self.loop.run_until_complete(fut)
+
+        self.assertTrue(fut.done())
         self.assertFalse(self.executor.is_alive())
 
 

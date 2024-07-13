@@ -49,7 +49,9 @@ async def main():
     print(result)
 
     executor.shutdown()
-    # the thread is closed here
+    # the thread will be closed.
+    # if you want to wait until all queued tasks are completed:
+    # await executor.shutdown()
 
 if __name__ == '__main__':
     asyncio.run(main())
