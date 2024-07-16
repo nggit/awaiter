@@ -86,6 +86,16 @@ def generator_function(name):
 
 # ...
 ```
+## But I want a thread pool?
+We provide the `asyncutor.MultiThreadExecutor` helper.
+
+It has a thread pool-like approach and is more suitable for use as a single, persistent object:
+
+```python
+executor = MultiThreadExecutor(size=10)
+```
+
+How to use is the same, as the interface is identical to `asyncutor.ThreadExecutor`.
 
 ## Install
 ```

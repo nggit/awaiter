@@ -5,7 +5,7 @@ import sys
 import time
 import unittest
 
-from asyncutor import ThreadExecutor
+from asyncutor import ThreadExecutor, MultiThreadExecutor
 
 
 class TestThreadExecutor(unittest.TestCase):
@@ -45,7 +45,7 @@ class TestThreadExecutor(unittest.TestCase):
 
     def test_multiple_tasks(self):
         def blocking_function(name):
-            time.sleep(1)
+            time.sleep(0.25)
             return f'Hello, {name}!'
 
         async def test():
@@ -53,8 +53,8 @@ class TestThreadExecutor(unittest.TestCase):
             fut1 = self.executor.submit(blocking_function, 'Foo')
             fut2 = self.executor.submit(blocking_function, 'Bar')
 
-            await asyncio.sleep(3)
-            # after 3 seconds there should be a result without these:
+            await asyncio.sleep(1)
+            # after 1 seconds there should be a result without these:
             # await fut1
             # await fut2
 
@@ -81,6 +81,7 @@ class TestThreadExecutor(unittest.TestCase):
         @self.executor
         def generator_function(name):
             yield b'Hello, '
+            time.sleep(0.1)
             yield name
             yield b'!'
 
@@ -108,7 +109,7 @@ class TestThreadExecutor(unittest.TestCase):
         self.loop.run_until_complete(test())
 
     def test_submit_before_start(self):
-        executor = ThreadExecutor()
+        executor = MultiThreadExecutor(1)
 
         with self.assertRaises(RuntimeError) as cm:
             executor.submit(None)
@@ -135,6 +136,28 @@ class TestThreadExecutor(unittest.TestCase):
 
         self.assertTrue(fut.done())
         self.assertFalse(self.executor.is_alive())
+
+    def test_multithread_executor(self):
+        def blocking_function(name):
+            time.sleep(0.1)
+            return f'Hello, {name}!'
+
+        async def test():
+            for size in (1, 2, 10):
+                async with MultiThreadExecutor(size) as executor:
+                    fut1 = executor(blocking_function)('Foo')
+                    fut2 = executor(blocking_function)('Bar')
+
+                    # test early shutdown
+                    await executor.shutdown()
+                    # await fut1
+                    # await fut2
+
+                    self.assertEqual(executor.queue.qsize(), 0)
+                    self.assertEqual(fut1.result(), 'Hello, Foo!')
+                    self.assertEqual(fut2.result(), 'Hello, Bar!')
+
+        self.loop.run_until_complete(test())
 
 
 if __name__ == '__main__':
