@@ -1,6 +1,6 @@
 # Copyright (c) 2024 nggit
 
-__version__ = '0.0.5'
+__version__ = '0.0.6'
 __all__ = ('ThreadExecutor', 'MultiThreadExecutor')
 
 import asyncio  # noqa: E402
@@ -81,7 +81,7 @@ class ThreadExecutor(Thread):
         self.loop.call_soon_threadsafe(set_result, self._shutdown_waiter, None)
 
     def submit(self, func, *args, **kwargs):
-        if not self.is_alive() or self._shutdown_waiter.done():
+        if not self.is_alive():
             raise RuntimeError(
                 'calling submit() before start() or after shutdown()'
             )
@@ -121,8 +121,11 @@ class MultiThreadExecutor(ThreadExecutor):
         super().__init__(loop=loop, name='MultiThreadExecutor')
 
         self.size = size
-        self._threads = {self.name: self}
+        self._threads = {}
         self._shutdown = None
+
+    def is_alive(self):
+        return bool(self._threads)
 
     def start(self):
         if self._shutdown is None:
@@ -130,6 +133,7 @@ class MultiThreadExecutor(ThreadExecutor):
 
         if not self._shutdown.done():
             super().start()
+            self._threads[self.name] = super()
 
         return self
 
@@ -163,4 +167,7 @@ class MultiThreadExecutor(ThreadExecutor):
         return fut
 
     def shutdown(self):
+        if not self.is_alive():
+            set_result(self._shutdown, None)
+
         return asyncio.wait([super().shutdown(), self._shutdown])
