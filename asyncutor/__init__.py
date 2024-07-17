@@ -125,7 +125,11 @@ class MultiThreadExecutor(ThreadExecutor):
         self._shutdown = None
 
     def is_alive(self):
-        return bool(self._threads)
+        for thread in self._threads.values():
+            if thread.is_alive():
+                return True
+
+        return False
 
     def start(self):
         super().start()
