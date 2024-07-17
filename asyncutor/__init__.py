@@ -1,6 +1,6 @@
 # Copyright (c) 2024 nggit
 
-__version__ = '0.0.7'
+__version__ = '0.0.8'
 __all__ = ('ThreadExecutor', 'MultiThreadExecutor')
 
 import asyncio  # noqa: E402
@@ -122,8 +122,8 @@ class MultiThreadExecutor(ThreadExecutor):
 
         self.size = size
         self._threads = {}
-        self._shutdown = None
         self._delete_lock = Lock()
+        self._shutdown = None
 
     def is_alive(self):
         with self._delete_lock:
