@@ -8,7 +8,7 @@ import asyncio  # noqa: E402
 from functools import wraps  # noqa: E402
 from inspect import isgenerator, isgeneratorfunction  # noqa: E402
 from queue import SimpleQueue  # noqa: E402
-from threading import Thread, current_thread  # noqa: E402
+from threading import Thread, current_thread, Lock  # noqa: E402
 
 
 def set_result(fut, result):
@@ -123,11 +123,13 @@ class MultiThreadExecutor(ThreadExecutor):
         self.size = size
         self._threads = {}
         self._shutdown = None
+        self._delete_lock = Lock()
 
     def is_alive(self):
-        for thread in self._threads.values():
-            if thread.is_alive():
-                return True
+        with self._delete_lock:
+            for thread in self._threads.values():
+                if thread.is_alive():
+                    return True
 
         return False
 
@@ -142,14 +144,13 @@ class MultiThreadExecutor(ThreadExecutor):
             super().run()
             self.size -= 1
         finally:
-            if current_thread().name in self._threads:
-                del self._threads[current_thread().name]
+            with self._delete_lock:
+                if current_thread().name in self._threads:
+                    del self._threads[current_thread().name]
 
-        for thread in self._threads.values():
-            if thread.is_alive():
-                # exited normally. signal the next thread to stop as well
-                self.queue.put_nowait((None, None, None, None))
-                break
+        if self.is_alive():
+            # exited normally. signal the next thread to stop as well
+            self.queue.put_nowait((None, None, None, None))
         else:
             self.loop.call_soon_threadsafe(set_result, self._shutdown, None)
 
