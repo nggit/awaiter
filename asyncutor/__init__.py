@@ -1,6 +1,6 @@
 # Copyright (c) 2024 nggit
 
-__version__ = '0.0.6'
+__version__ = '0.0.7'
 __all__ = ('ThreadExecutor', 'MultiThreadExecutor')
 
 import asyncio  # noqa: E402
@@ -27,7 +27,7 @@ class ThreadExecutor(Thread):
 
         self.queue = SimpleQueue()
         self._loop = loop
-        self._shutdown_waiter = None
+        self._shutdown = None
 
     @property
     def loop(self):
@@ -50,11 +50,7 @@ class ThreadExecutor(Thread):
         return wrapper
 
     def start(self):
-        if self._shutdown_waiter is None:
-            self._shutdown_waiter = self.loop.create_future()
-
-        if not self._shutdown_waiter.done():
-            super().start()
+        super().start()
 
         return self
 
@@ -63,6 +59,9 @@ class ThreadExecutor(Thread):
             fut, func, args, kwargs = self.queue.get()
 
             if func is None:
+                if isinstance(fut, asyncio.Future):
+                    self.loop.call_soon_threadsafe(set_result, fut, None)
+
                 break
 
             try:
@@ -77,8 +76,6 @@ class ThreadExecutor(Thread):
                     self.loop.call_soon_threadsafe(fut.cancel)
                 else:
                     self.loop.call_soon_threadsafe(set_exception, fut, exc)
-
-        self.loop.call_soon_threadsafe(set_result, self._shutdown_waiter, None)
 
     def submit(self, func, *args, **kwargs):
         if not self.is_alive():
@@ -108,12 +105,15 @@ class ThreadExecutor(Thread):
         return fut
 
     def shutdown(self):
-        if self.is_alive():
-            self.queue.put_nowait((None, None, None, None))
-        else:
-            set_result(self._shutdown_waiter, None)
+        if self._shutdown is None:
+            self._shutdown = self.loop.create_future()
 
-        return self._shutdown_waiter
+        if self.is_alive():
+            self.queue.put_nowait((self._shutdown, None, None, None))
+        else:
+            set_result(self._shutdown, None)
+
+        return self._shutdown
 
 
 class MultiThreadExecutor(ThreadExecutor):
@@ -128,12 +128,8 @@ class MultiThreadExecutor(ThreadExecutor):
         return bool(self._threads)
 
     def start(self):
-        if self._shutdown is None:
-            self._shutdown = self.loop.create_future()
-
-        if not self._shutdown.done():
-            super().start()
-            self._threads[self.name] = super()
+        super().start()
+        self._threads[self.name] = super()
 
         return self
 
@@ -167,7 +163,12 @@ class MultiThreadExecutor(ThreadExecutor):
         return fut
 
     def shutdown(self):
-        if not self.is_alive():
+        if self._shutdown is None:
+            self._shutdown = self.loop.create_future()
+
+        if self.is_alive():
+            self.queue.put_nowait((None, None, None, None))
+        else:
             set_result(self._shutdown, None)
 
-        return asyncio.wait([super().shutdown(), self._shutdown])
+        return self._shutdown
