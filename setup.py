@@ -7,7 +7,7 @@ with open('README.md', 'r') as f:
 
 setup(
     name='asyncutor',
-    version='0.0.8',
+    version='0.0.9',
     license='MIT',
     author='nggit',
     author_email='contact@anggit.com',

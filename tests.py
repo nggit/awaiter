@@ -20,6 +20,8 @@ class TestThreadExecutor(unittest.TestCase):
         self.loop.run_until_complete(self.executor.shutdown())
         self.loop.close()
 
+        self.assertEqual(self.executor.queue.qsize(), 0)
+
     def test_result(self):
         def blocking_function(name):
             return f'Hello, {name}!'
@@ -156,6 +158,8 @@ class TestThreadExecutor(unittest.TestCase):
                     self.assertEqual(executor.queue.qsize(), 0)
                     self.assertEqual(fut1.result(), 'Hello, Foo!')
                     self.assertEqual(fut2.result(), 'Hello, Bar!')
+
+                self.assertEqual(executor.queue.qsize(), 0)
 
         self.loop.run_until_complete(test())
 

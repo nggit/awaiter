@@ -1,6 +1,6 @@
 # Copyright (c) 2024 nggit
 
-__version__ = '0.0.8'
+__version__ = '0.0.9'
 __all__ = ('ThreadExecutor', 'MultiThreadExecutor')
 
 import asyncio  # noqa: E402
@@ -60,6 +60,7 @@ class ThreadExecutor(Thread):
 
             if func is None:
                 if isinstance(fut, asyncio.Future):
+                    self.loop.call_soon_threadsafe(self.join)
                     self.loop.call_soon_threadsafe(set_result, fut, None)
 
                 break
@@ -152,6 +153,7 @@ class MultiThreadExecutor(ThreadExecutor):
             # exited normally. signal the next thread to stop as well
             self.queue.put_nowait((None, None, None, None))
         else:
+            self.loop.call_soon_threadsafe(current_thread().join)
             self.loop.call_soon_threadsafe(set_result, self._shutdown, None)
 
     def submit(self, *args, **kwargs):
