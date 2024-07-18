@@ -21,7 +21,7 @@ jobs:
         os: ['ubuntu-20.04', 'windows-latest']
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -43,13 +43,11 @@ jobs:
       - name: Run tests with coverage
         run: |
           python -m coverage run tests.py
-          python -m coverage combine
           mkdir artifact && mv .coverage artifact/.coverage.${{ matrix.os }}
         if: ${{ matrix.python-version == '3.12' && !startsWith(matrix.os, 'windows-') }}
       - name: Run tests with coverage on Windows
         run: |
           python -m coverage run tests.py
-          python -m coverage combine
           mkdir artifact && move .coverage artifact\.coverage.windows
         shell: cmd
         if: ${{ matrix.python-version == '3.12' && startsWith(matrix.os, 'windows-') }}
