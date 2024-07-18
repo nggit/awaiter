@@ -165,7 +165,9 @@ class MultiThreadExecutor(ThreadExecutor):
                 target=self.run, name=f'{self.name}.{num}.{self.loop.time()}'
             )
             thread.start()
-            self._threads[thread.name] = thread
+
+            with self._delete_lock:
+                self._threads[thread.name] = thread
 
         return fut
 
