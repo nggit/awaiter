@@ -158,15 +158,16 @@ class MultiThreadExecutor(ThreadExecutor):
 
     def submit(self, *args, **kwargs):
         fut = super().submit(*args, **kwargs)
-        num = len(self._threads)
 
-        if num < self.size:
-            thread = Thread(
-                target=self.run, name=f'{self.name}.{num}.{self.loop.time()}'
-            )
-            thread.start()
+        with self._delete_lock:
+            num = len(self._threads)
 
-            with self._delete_lock:
+            if num < self.size:
+                thread = Thread(
+                    target=self.run,
+                    name=f'{self.name}.{num}.{self.loop.time()}'
+                )
+                thread.start()
                 self._threads[thread.name] = thread
 
         return fut
