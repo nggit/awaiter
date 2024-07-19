@@ -118,8 +118,8 @@ class ThreadExecutor(Thread):
 
 
 class MultiThreadExecutor(ThreadExecutor):
-    def __init__(self, size=10, loop=None):
-        super().__init__(loop=loop, name='MultiThreadExecutor')
+    def __init__(self, size=10, loop=None, name='MultiThreadExecutor'):
+        super().__init__(loop=loop, name=name)
 
         self.size = size
         self._threads = {}
