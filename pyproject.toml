@@ -3,7 +3,7 @@ requires = [ 'setuptools>=61.0', 'wheel' ]
 build-backend = 'setuptools.build_meta'
 
 [project]
-name = 'asyncutor'
+name = 'awaiter'
 authors = [
     { name = 'nggit', email = 'contact@anggit.com' },
 ]
@@ -26,5 +26,5 @@ Source = 'https://github.com/nggit/asyncutor'
 Funding = 'https://github.com/sponsors/nggit'
 
 [tool.setuptools.dynamic]
-version = { attr = 'asyncutor.__version__' }
+version = { attr = 'awaiter.__version__' }
 readme = { file = 'README.md', content-type = 'text/markdown' }

@@ -5,7 +5,7 @@ import sys
 import time
 import unittest
 
-from asyncutor import ThreadExecutor, MultiThreadExecutor
+from awaiter import ThreadExecutor, MultiThreadExecutor
 
 
 class TestThreadExecutor(unittest.TestCase):
