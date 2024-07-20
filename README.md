@@ -1,11 +1,11 @@
-# asyncutor
+# awaiter
 
 [![codecov](https://codecov.io/gh/nggit/asyncutor/branch/main/graph/badge.svg?token=E6GK8YQ26P)](https://codecov.io/gh/nggit/asyncutor)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=nggit_asyncutor&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=nggit_asyncutor)
 
 Makes your blocking functions *awaitable*.
 
-`asyncutor.ThreadExecutor()` represents a single thread that you can use to execute blocking functions in a FIFO manner.
+`awaiter.ThreadExecutor()` represents a single thread that you can use to execute blocking functions in a FIFO manner.
 It does not use a thread pool like [asyncio.to_thread()](https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread) or [loop.run_in_executor()](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor), to keep it minimal and predictable.
 
 ## Usage
@@ -13,7 +13,7 @@ It does not use a thread pool like [asyncio.to_thread()](https://docs.python.org
 import asyncio
 import time
 
-from asyncutor import ThreadExecutor
+from awaiter import ThreadExecutor
 
 
 def blocking_function(name):
@@ -36,7 +36,7 @@ Or use the decorator style:
 import asyncio
 import time
 
-from asyncutor import ThreadExecutor
+from awaiter import ThreadExecutor
 
 executor = ThreadExecutor()
 
@@ -91,7 +91,7 @@ def generator_function(name):
 # ...
 ```
 ## But I want a thread pool?
-We provide the `asyncutor.MultiThreadExecutor` helper.
+We provide the `awaiter.MultiThreadExecutor` helper.
 
 It has a thread pool-like approach and is more suitable for use as a single, persistent object:
 
@@ -99,11 +99,11 @@ It has a thread pool-like approach and is more suitable for use as a single, per
 executor = MultiThreadExecutor(size=10)
 ```
 
-How to use is the same, as the interface is identical to `asyncutor.ThreadExecutor`.
+How to use is the same, as the interface is identical to `awaiter.ThreadExecutor`.
 
 ## Install
 ```
-python3 -m pip install --upgrade asyncutor
+python3 -m pip install --upgrade awaiter
 ```
 
 ## License
