@@ -1,6 +1,6 @@
 # Copyright (c) 2024 nggit
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 __all__ = ('ThreadExecutor', 'MultiThreadExecutor')
 
 import asyncio  # noqa: E402
