@@ -21,8 +21,8 @@ classifiers = [
 dynamic = [ 'version', 'readme' ]
 
 [project.urls]
-Homepage = 'https://github.com/nggit/asyncutor'
-Source = 'https://github.com/nggit/asyncutor'
+Homepage = 'https://github.com/nggit/awaiter'
+Source = 'https://github.com/nggit/awaiter'
 Funding = 'https://github.com/sponsors/nggit'
 
 [tool.setuptools.dynamic]
