@@ -97,6 +97,17 @@ class TestThreadExecutor(unittest.TestCase):
 
         self.loop.run_until_complete(test())
 
+    def test_iterable(self):
+        async def test():
+            result = bytearray()
+
+            async for data in self.executor(b'Hello, World!')():
+                result.append(data)
+
+            self.assertEqual(result, b'Hello, World!')
+
+        self.loop.run_until_complete(test())
+
     def test_cancel_future(self):
         def blocking_function():
             return
@@ -131,6 +142,12 @@ class TestThreadExecutor(unittest.TestCase):
             str(cm.exception),
             'calling submit() before start() or after shutdown()'
         )
+
+    def test_submit_none(self):
+        with self.assertRaises(TypeError) as cm:
+            self.executor.submit(None)
+
+        self.assertEqual(str(cm.exception), 'None is not callable or iterable')
 
     def test_shutdown(self):
         fut = self.executor.shutdown()

@@ -6,7 +6,7 @@ __all__ = ('ThreadExecutor', 'MultiThreadExecutor')
 import asyncio  # noqa: E402
 
 from functools import wraps  # noqa: E402
-from inspect import isgenerator, isgeneratorfunction  # noqa: E402
+from inspect import isgeneratorfunction  # noqa: E402
 from queue import SimpleQueue  # noqa: E402
 from threading import Thread, current_thread, Lock  # noqa: E402
 
@@ -71,7 +71,7 @@ class ThreadExecutor(Thread):
                 self.loop.call_soon_threadsafe(set_result, fut, result)
             except BaseException as exc:
                 if (isinstance(exc, StopIteration) and
-                        isgenerator(getattr(func, '__self__'))):
+                        hasattr(getattr(func, '__self__'), '__iter__')):
                     # StopIteration interacts badly with generators
                     # and cannot be raised into a Future
                     self.loop.call_soon_threadsafe(fut.cancel)
@@ -84,7 +84,8 @@ class ThreadExecutor(Thread):
                 'calling submit() before start() or after shutdown()'
             )
 
-        if isgeneratorfunction(func):
+        if isgeneratorfunction(func) or hasattr(func, '__iter__'):
+            func = getattr(func, '__iter__', func)
             gen = func(*args, **kwargs)
 
             @wraps(func)
@@ -100,10 +101,13 @@ class ThreadExecutor(Thread):
 
             return wrapper()
 
-        fut = self.loop.create_future()
-        self.queue.put_nowait((fut, func, args, kwargs))
+        if callable(func):
+            fut = self.loop.create_future()
+            self.queue.put_nowait((fut, func, args, kwargs))
 
-        return fut
+            return fut
+
+        raise TypeError(f'{str(func)} is not callable or iterable')
 
     def shutdown(self):
         if self._shutdown is None:
