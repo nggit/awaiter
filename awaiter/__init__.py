@@ -8,7 +8,7 @@ import asyncio  # noqa: E402
 from functools import wraps  # noqa: E402
 from inspect import isgeneratorfunction  # noqa: E402
 from queue import SimpleQueue  # noqa: E402
-from threading import Thread, current_thread, Lock  # noqa: E402
+from threading import Thread, current_thread  # noqa: E402
 
 
 def set_result(fut, result):
@@ -127,14 +127,12 @@ class MultiThreadExecutor(ThreadExecutor):
 
         self.size = size
         self._threads = {}
-        self._delete_lock = Lock()
         self._shutdown = None
 
     def is_alive(self):
-        with self._delete_lock:
-            for thread in self._threads.values():
-                if thread.is_alive():
-                    return True
+        for thread in self._threads.values():
+            if thread.is_alive():
+                return True
 
         return False
 
@@ -149,30 +147,24 @@ class MultiThreadExecutor(ThreadExecutor):
             super().run()
             self.size -= 1
         finally:
-            with self._delete_lock:
-                if current_thread().name in self._threads:
-                    del self._threads[current_thread().name]
-
-        if self.is_alive():
-            # exited normally. signal the next thread to stop as well
-            self.queue.put_nowait((None, None, None, None))
-        else:
             self.loop.call_soon_threadsafe(current_thread().join)
-            self.loop.call_soon_threadsafe(set_result, self._shutdown, None)
+
+            if current_thread().name in self._threads:
+                del self._threads[current_thread().name]
+
+        # exited normally. signal the next thread to stop as well
+        self.loop.call_soon_threadsafe(self.shutdown)
 
     def submit(self, *args, **kwargs):
         fut = super().submit(*args, **kwargs)
+        num = len(self._threads)
 
-        with self._delete_lock:
-            num = len(self._threads)
-
-            if num < self.size:
-                thread = Thread(
-                    target=self.run,
-                    name=f'{self.name}.{num}.{self.loop.time()}'
-                )
-                thread.start()
-                self._threads[thread.name] = thread
+        if num < self.size:
+            thread = Thread(
+                target=self.run, name=f'{self.name}.{num}.{self.loop.time()}'
+            )
+            thread.start()
+            self._threads[thread.name] = thread
 
         return fut
 
