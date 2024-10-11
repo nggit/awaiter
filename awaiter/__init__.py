@@ -1,6 +1,6 @@
 # Copyright (c) 2024 nggit
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 __all__ = ('ThreadExecutor', 'MultiThreadExecutor')
 
 import asyncio  # noqa: E402
@@ -122,7 +122,7 @@ class ThreadExecutor(Thread):
 
 
 class MultiThreadExecutor(ThreadExecutor):
-    def __init__(self, size=10, loop=None, name='MultiThreadExecutor'):
+    def __init__(self, size=5, loop=None, name='MultiThreadExecutor'):
         super().__init__(loop=loop, name=name)
 
         self.size = size
